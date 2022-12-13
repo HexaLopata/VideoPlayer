@@ -103,9 +103,12 @@ class VideoWindow(QMainWindow):
         fileName, _ = QFileDialog.getOpenFileName(
             self, "Open Movie", QDir.homePath())
         if fileName != '':
-            self.mediaPlayer.setSource(QUrl.fromLocalFile(fileName))
-            self.setWindowTitle(fileName)
-            self.controlPanel.playButton.setEnabled(True)
+            self.playFromFile(fileName)
+
+    def playFromFile(self, fileName: str):
+        self.mediaPlayer.setSource(QUrl.fromLocalFile(fileName))
+        self.setWindowTitle(fileName)
+        self.controlPanel.playButton.setEnabled(True)
 
     def triggerControlPanel(self):
         self.controlPanel.setVisible(self.isControlPanelHidden)
@@ -280,5 +283,9 @@ if __name__ == '__main__':
     player = VideoWindow()
     player.resize(640, 480)
     player.show()
+    FILE_PATH = sys.argv[1]
+    if os.path.exists(FILE_PATH) and os.path.isfile(FILE_PATH):
+        player.playFromFile(FILE_PATH)
+        player.triggerPlay()
     app.installEventFilter(player)
     sys.exit(app.exec())
