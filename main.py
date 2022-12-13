@@ -16,7 +16,8 @@ from PyQt6.QtWidgets import (
     QMenu,
     QGraphicsScene,
     QGraphicsView,
-    QLabel
+    QLabel,
+    QComboBox
 )
 
 from PyQt6.QtGui import QIcon, QAction
@@ -46,11 +47,20 @@ class ControlPanel(QWidget):
         self.volumeSlider.setRange(0, 100)
         self.volumeSlider.setMaximumWidth(100)
 
+        self.playbackSpeedComboBox = QComboBox()
+        self.playbackSpeedComboBox.addItem('0.25x', 0.25)
+        self.playbackSpeedComboBox.addItem('0.5x', 0.5)
+        self.playbackSpeedComboBox.addItem('1x', 1)
+        self.playbackSpeedComboBox.addItem('1.5x', 1.5)
+        self.playbackSpeedComboBox.addItem('2x', 2)
+        self.playbackSpeedComboBox.setCurrentIndex(2)
 
         self.controlLayout = QHBoxLayout()
         self.controlLayout.setContentsMargins(10, 10, 10, 10)
         self.controlLayout.addWidget(self.playButton)
         self.controlLayout.addWidget(self.positionSlider)
+        self.controlLayout.addWidget(QLabel('Скорость воспроизведения: '))
+        self.controlLayout.addWidget(self.playbackSpeedComboBox)
         self.controlLayout.addWidget(QLabel('Громкость: '))
         self.controlLayout.addWidget(self.volumeSlider)
 
@@ -64,7 +74,6 @@ class VideoWindow(QMainWindow):
         self.setWindowTitle("Видеоплеер Лёхи")
         self.isControlPanelHidden = False
         self.isFullScreen = False
-
 
         centralWidget = QWidget()
 
@@ -172,6 +181,10 @@ class VideoWindow(QMainWindow):
     def _durationChanged(self, duration):
         self.controlPanel.positionSlider.setRange(0, duration)
 
+    def _playbackSpeedChanged(self, index):
+        self.mediaPlayer.setPlaybackRate(
+            self.controlPanel.playbackSpeedComboBox.itemData(index))
+
     def _resizeVideoItem(self):
         height = self.size().height() - self.controlPanel.height() * \
             (0 if self.isControlPanelHidden else 1)
@@ -194,8 +207,12 @@ class VideoWindow(QMainWindow):
         self.audioOutput = QAudioOutput()
         self.audioOutput.setVolume(1)
 
-        self.controlPanel.volumeSlider.setValue(int(self.audioOutput.volume() * 100))
+        self.controlPanel.volumeSlider.setValue(
+            int(self.audioOutput.volume() * 100))
         self.controlPanel.volumeSlider.valueChanged.connect(self.setVolume)
+
+        self.controlPanel.playbackSpeedComboBox.currentIndexChanged.connect(
+            self._playbackSpeedChanged)
 
         self.mediaPlayer.setAudioOutput(self.audioOutput)
         self.mediaPlayer.setVideoOutput(self.videoItem)
