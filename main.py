@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import (
     QComboBox
 )
 
-from PyQt6.QtGui import QIcon, QAction
+from PyQt6.QtGui import QIcon, QAction, QKeyEvent
 
 STYLES_PATH = os.path.join(os.path.dirname(
     os.path.realpath(__file__)), 'styles')
@@ -74,6 +74,8 @@ class VideoWindow(QMainWindow):
         self.setWindowTitle("Видеоплеер Лёхи")
         self.isControlPanelHidden = False
         self.isFullScreen = False
+        self.rewindStep = 10_000
+        self.volumeStep = 10
 
         centralWidget = QWidget()
 
@@ -162,6 +164,45 @@ class VideoWindow(QMainWindow):
 
     def setVolume(self, volume: int):
         self.audioOutput.setVolume(volume / 100)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        key = event.nativeVirtualKey()
+
+        match key:
+            # pause/play space | k
+            case 32 | 75:
+                self.triggerPlay()
+            # rewind backward j
+            case 74:
+                self.mediaPlayer.setPosition(
+                    max(self.mediaPlayer.position() - self.rewindStep, 0))
+            # rewind forward l
+            case 76:
+                self.mediaPlayer.setPosition(
+                    min(self.mediaPlayer.position() + self.rewindStep, self.mediaPlayer.duration()))
+            # reduce playback speed ','
+            case 188:
+                currentIndex = self.controlPanel.playbackSpeedComboBox.currentIndex()
+                self.controlPanel.playbackSpeedComboBox.setCurrentIndex(
+                    max(currentIndex - 1, 0))
+            # increase playback speed '.'
+            case 190:
+                currentIndex = self.controlPanel.playbackSpeedComboBox.currentIndex()
+                self.controlPanel.playbackSpeedComboBox.setCurrentIndex(
+                    min(currentIndex + 1, self.controlPanel.playbackSpeedComboBox.count() - 1))
+            # trigger fullscreen f
+            case 70:
+                self.triggerFullScreen()
+            # decrease volume u
+            case 85:
+                volume = self.controlPanel.volumeSlider.value()
+                self.controlPanel.volumeSlider.setValue(
+                    max(volume - self.volumeStep, 0))
+            # decrease volume i
+            case 73:
+                volume = self.controlPanel.volumeSlider.value()
+                self.controlPanel.volumeSlider.setValue(
+                    min(volume + self.volumeStep, 100))
 
     def _updateVideoPosition(self):
         self.mediaPlayer.setPosition(self.controlPanel.positionSlider.value())

@@ -1,0 +1,8 @@
+f - fullscreen
+k, space -  play/pause
+j - rewind backward
+l - rewind forward
+u - decrease volume
+i - increase volume
+, - reduce playback speed
+. - increase playback speed 
