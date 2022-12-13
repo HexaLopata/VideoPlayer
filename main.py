@@ -104,6 +104,7 @@ class VideoWindow(QMainWindow):
             self, "Open Movie", QDir.homePath())
         if fileName != '':
             self.playFromFile(fileName)
+            self.triggerPlay()
 
     def playFromFile(self, fileName: str):
         self.mediaPlayer.setSource(QUrl.fromLocalFile(fileName))
@@ -283,9 +284,10 @@ if __name__ == '__main__':
     player = VideoWindow()
     player.resize(640, 480)
     player.show()
-    FILE_PATH = sys.argv[1]
-    if os.path.exists(FILE_PATH) and os.path.isfile(FILE_PATH):
-        player.playFromFile(FILE_PATH)
-        player.triggerPlay()
+    if len(sys.argv) > 1:
+        FILE_PATH = sys.argv[1]
+        if os.path.exists(FILE_PATH) and os.path.isfile(FILE_PATH):
+            player.playFromFile(FILE_PATH)
+            player.triggerPlay()
     app.installEventFilter(player)
     sys.exit(app.exec())
