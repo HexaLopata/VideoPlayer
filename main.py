@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QMenu,
     QGraphicsScene,
     QGraphicsView,
+    QLabel
 )
 
 from PyQt6.QtGui import QIcon, QAction
@@ -35,17 +36,23 @@ class ControlPanel(QWidget):
         self.playButton = QPushButton()
         self.playButton.setText('Play')
         self.playButton.setEnabled(False)
+        self.setContentsMargins(0, 0, 0, 0)
+        self.setMaximumHeight(70)
 
         self.positionSlider = QSlider(Qt.Orientation.Horizontal)
         self.positionSlider.setRange(0, 0)
 
-        self.setContentsMargins(0, 0, 0, 0)
-        self.setMaximumHeight(70)
+        self.volumeSlider = QSlider(Qt.Orientation.Horizontal)
+        self.volumeSlider.setRange(0, 100)
+        self.volumeSlider.setMaximumWidth(100)
+
 
         self.controlLayout = QHBoxLayout()
         self.controlLayout.setContentsMargins(10, 10, 10, 10)
         self.controlLayout.addWidget(self.playButton)
         self.controlLayout.addWidget(self.positionSlider)
+        self.controlLayout.addWidget(QLabel('Громкость: '))
+        self.controlLayout.addWidget(self.volumeSlider)
 
         self.setLayout(self.controlLayout)
 
@@ -58,7 +65,6 @@ class VideoWindow(QMainWindow):
         self.isControlPanelHidden = False
         self.isFullScreen = False
 
-        self._setupMediaPlayer()
 
         centralWidget = QWidget()
 
@@ -67,6 +73,8 @@ class VideoWindow(QMainWindow):
         self.controlPanel.playButton.clicked.connect(self.triggerPlay)
         self.controlPanel.positionSlider.sliderReleased.connect(
             self._updateVideoPosition)
+
+        self._setupMediaPlayer()
 
         self.layout = QVBoxLayout()
         self.layout.setSpacing(0)
@@ -143,6 +151,9 @@ class VideoWindow(QMainWindow):
     def resizeEvent(self, _) -> None:
         self._resizeVideoItem()
 
+    def setVolume(self, volume: int):
+        self.audioOutput.setVolume(volume / 100)
+
     def _updateVideoPosition(self):
         self.mediaPlayer.setPosition(self.controlPanel.positionSlider.value())
 
@@ -181,7 +192,10 @@ class VideoWindow(QMainWindow):
         self.videoItem = QGraphicsVideoItem()
         self.scene.addItem(self.videoItem)
         self.audioOutput = QAudioOutput()
-        self.audioOutput.setVolume(50)
+        self.audioOutput.setVolume(1)
+
+        self.controlPanel.volumeSlider.setValue(int(self.audioOutput.volume() * 100))
+        self.controlPanel.volumeSlider.valueChanged.connect(self.setVolume)
 
         self.mediaPlayer.setAudioOutput(self.audioOutput)
         self.mediaPlayer.setVideoOutput(self.videoItem)
