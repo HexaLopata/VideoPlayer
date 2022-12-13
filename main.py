@@ -1,7 +1,7 @@
 import sys
 import os
 
-from PyQt6.QtCore import QDir, Qt, QUrl, QSizeF
+from PyQt6.QtCore import QDir, Qt, QUrl, QSizeF, QEvent, QObject
 from PyQt6.QtMultimediaWidgets import QGraphicsVideoItem
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtWidgets import (
@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import (
     QComboBox
 )
 
-from PyQt6.QtGui import QIcon, QAction, QKeyEvent
+from PyQt6.QtGui import QIcon, QAction, QKeyEvent, QMouseEvent
 
 STYLES_PATH = os.path.join(os.path.dirname(
     os.path.realpath(__file__)), 'styles')
@@ -76,6 +76,7 @@ class VideoWindow(QMainWindow):
         self.isFullScreen = False
         self.rewindStep = 10_000
         self.volumeStep = 10
+        self.controlPanelTriggerRange = 75
 
         centralWidget = QWidget()
 
@@ -86,6 +87,7 @@ class VideoWindow(QMainWindow):
             self._updateVideoPosition)
 
         self._setupMediaPlayer()
+        self.triggerControlPanel()
 
         self.layout = QVBoxLayout()
         self.layout.setSpacing(0)
@@ -140,12 +142,6 @@ class VideoWindow(QMainWindow):
         exitAction.setStatusTip('Quit application')
         exitAction.triggered.connect(self._exit)
 
-        triggerControlPanelText = '&Show Control Panel' if self.isControlPanelHidden \
-            else '&Hide Control Panel'
-
-        triggerControlPanelAction = QAction(triggerControlPanelText, self)
-        triggerControlPanelAction.triggered.connect(self.triggerControlPanel)
-
         triggerFullscreenText = '&Exit FullScreen' if self.isFullScreen \
             else '&Enter FullScreen'
 
@@ -154,7 +150,6 @@ class VideoWindow(QMainWindow):
 
         contextMenu.addAction(openAction)
         contextMenu.addAction(exitAction)
-        contextMenu.addAction(triggerControlPanelAction)
         contextMenu.addAction(fullscreenAction)
 
         contextMenu.exec(self.mapToGlobal(event.pos()))
@@ -203,6 +198,23 @@ class VideoWindow(QMainWindow):
                 volume = self.controlPanel.volumeSlider.value()
                 self.controlPanel.volumeSlider.setValue(
                     min(volume + self.volumeStep, 100))
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        position = event.scenePosition()
+        positionY = self.size().height() - position.y()
+
+        if positionY > self.controlPanel.size().height() + self.controlPanelTriggerRange \
+                and not self.isControlPanelHidden:
+            self.triggerControlPanel()
+        elif positionY <= self.controlPanel.size().height() + self.controlPanelTriggerRange \
+                and self.isControlPanelHidden:
+            self.triggerControlPanel()
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if isinstance(event, QMouseEvent):
+            if obj is self.windowHandle():
+                self.mouseMoveEvent(event)
+        return False
 
     def _updateVideoPosition(self):
         self.mediaPlayer.setPosition(self.controlPanel.positionSlider.value())
@@ -268,4 +280,5 @@ if __name__ == '__main__':
     player = VideoWindow()
     player.resize(640, 480)
     player.show()
+    app.installEventFilter(player)
     sys.exit(app.exec())
