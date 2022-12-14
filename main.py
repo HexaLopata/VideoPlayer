@@ -165,40 +165,40 @@ class VideoWindow(QMainWindow):
         self.audioOutput.setVolume(volume / 100)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        key = event.nativeVirtualKey()
+        key = event.keyCombination().key()
 
         match key:
-            # pause/play space | k
-            case 32 | 75:
+            # pause/play
+            case Qt.Key.Key_Space | Qt.Key.Key_K:
                 self.triggerPlay()
-            # rewind backward j
-            case 74:
+            # rewind backward
+            case Qt.Key.Key_J:
                 self.mediaPlayer.setPosition(
                     max(self.mediaPlayer.position() - self.rewindStep, 0))
-            # rewind forward l
-            case 76:
+            # rewind forward
+            case Qt.Key.Key_L:
                 self.mediaPlayer.setPosition(
                     min(self.mediaPlayer.position() + self.rewindStep, self.mediaPlayer.duration()))
-            # reduce playback speed ','
-            case 188:
+            # reduce playback speed
+            case Qt.Key.Key_Comma:
                 currentIndex = self.controlPanel.playbackSpeedComboBox.currentIndex()
                 self.controlPanel.playbackSpeedComboBox.setCurrentIndex(
                     max(currentIndex - 1, 0))
-            # increase playback speed '.'
-            case 190:
+            # increase playback speed
+            case Qt.Key.Key_Period:
                 currentIndex = self.controlPanel.playbackSpeedComboBox.currentIndex()
                 self.controlPanel.playbackSpeedComboBox.setCurrentIndex(
                     min(currentIndex + 1, self.controlPanel.playbackSpeedComboBox.count() - 1))
-            # trigger fullscreen f
-            case 70:
+            # trigger fullscreen
+            case Qt.Key.Key_F:
                 self.triggerFullScreen()
-            # decrease volume u
-            case 85:
+            # decrease volume
+            case Qt.Key.Key_U:
                 volume = self.controlPanel.volumeSlider.value()
                 self.controlPanel.volumeSlider.setValue(
                     max(volume - self.volumeStep, 0))
-            # decrease volume i
-            case 73:
+            # decrease volume
+            case Qt.Key.Key_I:
                 volume = self.controlPanel.volumeSlider.value()
                 self.controlPanel.volumeSlider.setValue(
                     min(volume + self.volumeStep, 100))
