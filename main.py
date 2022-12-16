@@ -1,7 +1,7 @@
 import sys
 import os
 
-from PyQt6.QtCore import QDir, Qt, QUrl, QSizeF, QEvent, QObject
+from PyQt6.QtCore import QDir, Qt, QUrl, QSizeF, QEvent, QObject, QPointF
 from PyQt6.QtMultimediaWidgets import QGraphicsVideoItem
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtWidgets import (
@@ -17,10 +17,11 @@ from PyQt6.QtWidgets import (
     QGraphicsScene,
     QGraphicsView,
     QLabel,
-    QComboBox
+    QComboBox,
+    QGraphicsPolygonItem
 )
 
-from PyQt6.QtGui import QIcon, QAction, QKeyEvent, QMouseEvent
+from PyQt6.QtGui import QIcon, QAction, QKeyEvent, QMouseEvent, QPolygonF, QColor
 
 STYLES_PATH = os.path.join(os.path.dirname(
     os.path.realpath(__file__)), 'styles')
@@ -77,6 +78,9 @@ class VideoWindow(QMainWindow):
         self.rewindStep = 10_000
         self.volumeStep = 10
         self.controlPanelTriggerRange = 75
+        self.playIconWidth = 60
+        self.playIconHeight = 100
+        self.playIconColor = QColor(255, 255, 255, 150)
 
         centralWidget = QWidget()
 
@@ -87,6 +91,7 @@ class VideoWindow(QMainWindow):
             self._updateVideoPosition)
 
         self._setupMediaPlayer()
+        self._setupPlayIcon()
         self.triggerControlPanel()
 
         self.layout = QVBoxLayout()
@@ -132,6 +137,8 @@ class VideoWindow(QMainWindow):
             self.mediaPlayer.pause()
         else:
             self.mediaPlayer.play()
+        self.playIcon.setVisible(not self.mediaPlayer.playbackState(
+        ) == QMediaPlayer.PlaybackState.PlayingState)
 
     def contextMenuEvent(self, event) -> None:
         contextMenu = QMenu()
@@ -214,11 +221,20 @@ class VideoWindow(QMainWindow):
                 and self.isControlPanelHidden:
             self.triggerControlPanel()
 
+    def mousePressEvent(self, _: QMouseEvent) -> None:
+        self.triggerPlay()
+
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         if isinstance(event, QMouseEvent):
             if obj is self.windowHandle():
                 self.mouseMoveEvent(event)
         return False
+
+    def _setupPlayIcon(self):
+        self.playIcon = QGraphicsPolygonItem()
+        self.playIcon.setPen(Qt.GlobalColor.transparent)
+        self.playIcon.setBrush(self.playIconColor)
+        self.scene.addItem(self.playIcon)
 
     def _updateVideoPosition(self):
         self.mediaPlayer.setPosition(self.controlPanel.positionSlider.value())
@@ -247,8 +263,21 @@ class VideoWindow(QMainWindow):
             (0 if self.isControlPanelHidden else 1)
         size = QSizeF(self.size().width(), height)
 
+        center = QPointF(size.width() // 2, size.height() // 2)
+
+        self.playIcon.setPolygon(
+            QPolygonF(
+                [QPointF(center.x() - self.playIconWidth, center.y() - self.playIconHeight / 2),
+                 QPointF(center.x() + self.playIconWidth, center.y()),
+                 QPointF(center.x() - self.playIconWidth, center.y() + self.playIconHeight / 2)]
+            ))
+
         self.videoItem.setSize(size)
         self.scene.setSceneRect(0, 0, size.width(), size.height())
+
+    def _stopIfNeed(self):
+        if self.mediaPlayer.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+            self.triggerPlay()
 
     def _setupMediaPlayer(self):
         self.mediaPlayer = QMediaPlayer()
@@ -258,11 +287,14 @@ class VideoWindow(QMainWindow):
         self.graphicsView = QGraphicsView(self.scene)
         self.graphicsView.setStyleSheet(
             'background-color: black; border: none;')
+        self.graphicsView.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.graphicsView.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         self.videoItem = QGraphicsVideoItem()
         self.scene.addItem(self.videoItem)
         self.audioOutput = QAudioOutput()
         self.audioOutput.setVolume(1)
+        self.controlPanel.positionSlider.sliderPressed.connect(self._stopIfNeed)
 
         self.controlPanel.volumeSlider.setValue(
             int(self.audioOutput.volume() * 100))

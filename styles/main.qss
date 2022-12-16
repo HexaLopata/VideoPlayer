@@ -1,8 +1,37 @@
+* {
+    background-color: #21252b;
+}
+
 QPushButton {
     width: 50px;
     height: 50px;
     border-radius: 25px;
-    background-color: black;
+    background-color: #2c323c;
+    color: white;
+}
+
+QSlider:handle {
+    background-color: #42a5f5;
+    width: 15px;
+    height: 15px;
+}
+
+QSlider:groove {
+    border: 1px solid #999999;
+    height: 8px;
+    background: #282c34;
+    margin: 2px 0;
+}
+
+QLabel {
+    color: white;
+}
+
+QComboBox {
+    color: white;
+}
+
+QMainWindow {
     color: white;
 }
 
