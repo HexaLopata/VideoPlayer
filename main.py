@@ -144,12 +144,11 @@ class VideoWindow(QMainWindow):
         contextMenu = QMenu()
 
         openAction = QAction(QIcon('open.png'), '&Open', self)
-        openAction.setShortcut('Ctrl+O')
+        openAction.setShortcut('O')
         openAction.setStatusTip('Open video')
         openAction.triggered.connect(self.openFile)
 
         exitAction = QAction('&Exit', self)
-        exitAction.setShortcut('Ctrl+Q')
         exitAction.setStatusTip('Quit application')
         exitAction.triggered.connect(self._exit)
 
@@ -157,11 +156,12 @@ class VideoWindow(QMainWindow):
             else '&Enter FullScreen'
 
         fullscreenAction = QAction(triggerFullscreenText, self)
+        fullscreenAction.setShortcut('F')
         fullscreenAction.triggered.connect(self.triggerFullScreen)
 
         contextMenu.addAction(openAction)
-        contextMenu.addAction(exitAction)
         contextMenu.addAction(fullscreenAction)
+        contextMenu.addAction(exitAction)
 
         contextMenu.exec(self.mapToGlobal(event.pos()))
 
@@ -209,6 +209,9 @@ class VideoWindow(QMainWindow):
                 volume = self.controlPanel.volumeSlider.value()
                 self.controlPanel.volumeSlider.setValue(
                     min(volume + self.volumeStep, 100))
+            # open file
+            case Qt.Key.Key_O:
+                self.openFile()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         position = event.scenePosition()

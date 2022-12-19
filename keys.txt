@@ -6,3 +6,4 @@ u - decrease volume
 i - increase volume
 , - reduce playback speed
 . - increase playback speed 
+o - open file
