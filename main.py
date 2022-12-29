@@ -90,9 +90,14 @@ class VideoItem(QWidget):
     def setIsPlaying(self, value):
         if value:
             self.fileNameLabel.setText('Playing...')
+            self.item.setSelected(True)
         else:
             self.fileNameLabel.setText(self.fileName)
+            self.item.setSelected(False)
         self.isPlaying = value
+
+    def mousePressEvent(self, _) -> None:
+        return
 
     def mouseDoubleClickEvent(self, _) -> None:
         self.doubleClicked.emit(self)
@@ -149,6 +154,7 @@ class PlayList(QWidget):
 
         self.playListContentLayout.addWidget(self.controlPanel)
         self.videoList = QListWidget()
+        self.videoList.itemSelectionChanged.connect(self.updateSelection)
 
         self.playListContentLayout.addWidget(self.videoList)
 
@@ -174,6 +180,14 @@ class PlayList(QWidget):
             self.minimizeButton.setText('<')
 
         self._isHidden = not self._isHidden
+
+    def updateSelection(self):
+        count = self.videoList.count()
+        videoItems = [self.videoList.itemWidget(self.videoList.item(i)) for i in range(count)]
+
+        for videoItem in videoItems:
+            if videoItem and videoItem.isPlaying:
+                videoItem.item.setSelected(True)
 
     def shuffleClicked(self):
         self.repeatButton.setProperty('selected', False)
@@ -269,6 +283,8 @@ class PlayList(QWidget):
         return self.videoList.count()
 
     def _adjustIndex(self, index):
+        if index == self._currentPlaylistIndex:
+            self._currentPlaylistIndex = -1
         if index > self._currentPlaylistIndex:
             return
 
@@ -502,8 +518,9 @@ class VideoWindow(QMainWindow):
                 and self._isControlPanelHidden:
             self.triggerControlPanel()
 
-    def mousePressEvent(self, _: QMouseEvent) -> None:
-        self.triggerPlay()
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.triggerPlay()
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         if isinstance(event, QMouseEvent):
